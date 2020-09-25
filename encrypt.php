@@ -85,15 +85,15 @@
          */
         private function encryptFile($method, $filename, $destination){
             if(($method == "encrypt" || $method == "decrypt") && !$this->test){ 
-        		$handle = fopen($filename, "r");
-        		$contents = fread($handle, filesize($filename));
-                
-        		$iv = $this->formatIV($this->key, $this->cipher);
-        		$crypttext = $method == "encrypt" ? openssl_encrypt($contents, $this->cipher, $this->key, $options=0, $iv) : openssl_decrypt($contents, $this->cipher, $this->key, $options=0, $iv);
-                
-        		file_put_contents($destination, $crypttext);
-                
-        		unlink($filename);
+                $handle = fopen($filename, "r");
+                $contents = fread($handle, filesize($filename));
+
+                $iv = $this->formatIV($this->key, $this->cipher);
+                $crypttext = $method == "encrypt" ? openssl_encrypt($contents, $this->cipher, $this->key, $options=0, $iv) : openssl_decrypt($contents, $this->cipher, $this->key, $options=0, $iv);
+
+                file_put_contents($destination, $crypttext);
+
+                unlink($filename);
             }
     	}
         
@@ -136,19 +136,19 @@
                 echo "<pre>";
             }
             
-    		for($i = 0; $i < count($file); $i++){
-    			if($file[$i] != "." && $file[$i] != ".."){
+            for($i = 0; $i < count($file); $i++){
+                if($file[$i] != "." && $file[$i] != ".."){
                     $isfolder = is_dir($folder."/".$file[$i]);
                     $currentscript = false;
                     $file_name = $file[$i];
                     $lastfile = $i == count($file) - 1;
                     $pathinfo = pathinfo($file_name);
-                    
-    				if($isfolder && !in_array(realpath($folder."/".$file_name), $this->avoidpath)){
+
+                    if($isfolder && !in_array(realpath($folder."/".$file_name), $this->avoidpath)){
                         $this->printFilesTree($isfolder, $file_name, $depth, $currentscript, $lastfile);
-    					$this->encrypt($method, $depth+1, $folder."/".$file_name);
-    				}
-    				else if(!$isfolder && (in_array($pathinfo["extension"], $this->onlyfiles) || (count($this->onlyfiles) == 1 && $this->onlyfiles[0] == "*"))){
+                        $this->encrypt($method, $depth+1, $folder."/".$file_name);
+                    }
+                    else if(!$isfolder && (in_array($pathinfo["extension"], $this->onlyfiles) || (count($this->onlyfiles) == 1 && $this->onlyfiles[0] == "*"))){
                         if($this->realpath == realpath($folder."/".$file_name)){
                             $currentscript = true;
                             $this->printFilesTree($isfolder, $file_name, $depth, $currentscript, $lastfile);
@@ -165,9 +165,9 @@
                                 $this->printFilesTree($isfolder, $file_name, $depth, $currentscript, $lastfile);
                             }
                         }
-    				}
-    			}
-    		}
+                    }
+                }
+            }
             
             if($this->echo && $depth == 0){
                 echo "</pre>";
