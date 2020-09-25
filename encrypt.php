@@ -1,6 +1,15 @@
 <?php
+
+    /**
+     *
+     *  PHP Site Encrypter
+     *  @see https://github.com/andreazorzi/site-encrypter
+     *  @author Andrea Zorzi (andreazorzi) <info@zorziandrea.com>
+     *  @version 1.0.0
+     *
+     */
     
-    class Encripter{
+    class Encrypter{
         private $key;
         private $folder;
         private $cipher;
@@ -12,6 +21,15 @@
         private $test = true;
         private $echo = true;
         
+        /**
+         *
+         * Object constructor
+         *
+         * @param   String      $key        Encryption secret key
+         * @param   Array       $settings   Encryption settings
+         * @return  Encrypter               Encrypter Object
+         *
+         */
         public function __construct($key, $settings = array()){
             $this->key = $key;
             
@@ -34,21 +52,43 @@
             $this->realpath = realpath(basename($_SERVER["PHP_SELF"]));
         }
         
+        /**
+         *
+         * Enable or disable the test mode
+         *
+         * @param   boolean    $test   Flag for enable or disable the test mode
+         *
+         */
         public function test($test){
             $this->test = $test;
         }
         
+        /**
+         *
+         * Enable or disable the text output
+         *
+         * @param   boolean    $echo   Flag for enable or disable the text output
+         *
+         */
         public function echo($echo){
             $this->echo = $echo;
         }
         
+        /**
+         *
+         * Function that retrieves data from a file, encrypts or decrypts the data, saves it in a new file and deletes the source file
+         *
+         * @param   String    $method       The encryption method, it can be encrypt or decrypt
+         * @param   String    $filename     The path to the source file
+         * @param   String    $destination  The path to the destination file
+         *
+         */
         private function encryptFile($method, $filename, $destination){
             if(($method == "encrypt" || $method == "decrypt") && !$this->test){ 
         		$handle = fopen($filename, "r");
         		$contents = fread($handle, filesize($filename));
                 
-        		$iv_size = openssl_cipher_iv_length($this->cipher);
-        		$iv = substr($this->key, 0, $iv_size);
+        		$iv = $this->formatIV($this->key, $this->cipher);
         		$crypttext = $method == "encrypt" ? openssl_encrypt($contents, $this->cipher, $this->key, $options=0, $iv) : openssl_decrypt($contents, $this->cipher, $this->key, $options=0, $iv);
                 
         		file_put_contents($destination, $crypttext);
@@ -56,7 +96,38 @@
         		unlink($filename);
             }
     	}
-    	
+        
+        /**
+         *
+         * Function that adjusts the length of the Initialization Vector based on the cipher used
+         *
+         * @param   String    $str      The string to adjust
+         * @param   String    $chiper   The cipher used
+         * @return  String              The adjusted string
+         * 
+         */
+        private function formatIV($str, $chiper){
+            $iv_size = openssl_cipher_iv_length($chiper);
+            
+            if(strlen($str) > $iv_size){
+                $str = substr($str, 0, $iv_size);
+            }
+            else if(strlen($str) < $iv_size){
+                $str .= str_repeat("0", $iv_size - strlen($str));
+            }
+            
+            return $str;
+        }
+        
+        /**
+         *
+         * Recursive function that iterates through all folders and files and checks if the file is to be encrypted or decrypted
+         *
+         * @param   String    $method   The encryption method, it can be encrypt or decrypt
+         * @param   String    $depth    The current tree depth (used to print the file tree)
+         * @param   String    $folder   The folder to be scanned
+         *
+         */
     	public function encrypt($method = "encrypt", $depth = 0, $folder = ""){
             $folder = $folder != "" ? $folder : $this->folder;
     		$file = scandir($folder);
@@ -95,9 +166,6 @@
                             }
                         }
     				}
-                    else{
-                        // $this->printFilesTree($isfolder, "<s>".$file_name."</s>", $depth, $currentscript, $lastfile);
-                    }
     			}
     		}
             
@@ -106,17 +174,28 @@
             }
     	}
         
-        public function printFilesTree($isfolder, $file_name, $depth, $currentscript, $lastfile){
+        /**
+         *
+         * Function to print the file tree
+         *
+         * @param   boolean     $isfolder       Indicates whether the current element is a folder or a file
+         * @param   String      $file_name      The element name
+         * @param   int         $depth          The current file tree depth
+         * @param   boolean     $currentscript  Indicates whether the current element is the script itself
+         * @param   boolean     $lastfile       Indicates whether the current element is the last file of the folder
+         *
+         */
+        private function printFilesTree($isfolder, $file_name, $depth, $currentscript, $lastfile){
+            $branch = "";
+            
+            if($isfolder){
+                $branch = ($depth != 0 ? str_repeat("      ", $depth - 1)." └──── ":"").'<span style="color: red;">'.$file_name.'</span><br>';
+            }
+            else{
+                $branch = ($depth != 0 ? str_repeat("      ", $depth - 1)." ".($lastfile ? "└────" : "├────")." ":"").'<span style="color: '.($currentscript ? 'green' : 'black').';">'.$file_name.'</span><br>';
+            }
+            
             if($this->echo){
-                $branch = "";
-                
-                if($isfolder){
-                    $branch = ($depth != 0 ? str_repeat("      ", $depth - 1)." └──── ":"").'<span style="color: red;">'.$file_name.'</span><br>';
-                }
-                else{
-                    $branch = ($depth != 0 ? str_repeat("      ", $depth - 1)." ".($lastfile ? "└────" : "├────")." ":"").'<span style="color: '.($currentscript ? 'green' : 'black').';">'.$file_name.'</span><br>';
-                }
-                
                 echo $branch;
             }
         }
@@ -125,15 +204,14 @@
     $settings = array(
         "folder" => ".", // "." is the current folder
         "cipher" => "aes-256-cbc",
-        "onlyfiles" => array("php"),
-        "avoidpath" => array("resource", "function")
+        "onlyfiles" => array("php")
     );
     
-    $encrypter = new Encripter("top secret key22", $settings);
+    $encrypter = new Encrypter("top secret", $settings);
     
     // $encrypter->echo(false);
     // $encrypter->test(false);
     
-    $encrypter->encrypt("decrypt");
+    $encrypter->encrypt("encrypt");
 
 ?>
