@@ -37,12 +37,12 @@
                 throw new Exception("Key can't be an empty string");
             }
             
-            $this->folder = isset($settings["folder"]) && is_dir($settings["folder"]) ? $settings["folder"] : ".";
+            $this->folder = isset($settings["folder"]) && is_dir($settings["folder"]) ? $settings["folder"] : "./";
             $this->cipher = isset($settings["cipher"]) && in_array($settings["cipher"], openssl_get_cipher_methods()) ? $settings["cipher"] : "aes-256-cbc";
             $this->onlyfiles = isset($settings["onlyfiles"]) && is_array($settings["onlyfiles"]) ? $settings["onlyfiles"] : array("php", "html", "css", "js");
             if(isset($settings["excludefolders"]) && is_array($settings["excludefolders"])){
                 foreach($settings["excludefolders"] as $p){
-                    $this->excludefolders[] = realpath($p);
+                    $this->excludefolders[] = realpath($this->folder.$p);
                 }
             }
             $this->ext = isset($settings["ext"]) && preg_match('/\.\w{2,}/', $settings["ext"]) ? $settings["ext"] : ".cryp";

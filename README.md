@@ -11,7 +11,7 @@ Once the file has been uploaded, it must be configured for remote access.
 
 ```php
 $settings = array(
-    "folder" => ".",
+    "folder" => "./",
     "cipher" => "aes-256-cbc",
     "onlyfiles" => array("php"),
     "excludefolders" => array("resource/test", "function"),
@@ -19,13 +19,13 @@ $settings = array(
 );
 ```
 
-- `Folder`: set the main folder from which to start encrypting, default value "." ("." is the current folder).
+- `Folder`: set the main folder from which to start encrypting, default value "./" ("./" is the current folder).
 
 - `Chiper`: the cipher to use, a list of ciphers can be obtained from openssl_get_cipher_methods() method, default value "aes-256-cbc".
 
 - `Onlyfiles`: array of file extensions to be encrypted, default value array("php", "html", "css", "js").
 
-- `Avoidpath`: array of folders to skip.
+- `Excludefolders`: array of folders to skip from encryption, the path is relative to the Folder settings.
 
 - `Ext`: extension added to the file after encryption, default value ".crypt".
 
