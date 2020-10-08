@@ -15,7 +15,7 @@
         private $cipher;
         private $realpath;
         private $onlyfiles;
-        private $avoidpath = array();
+        private $excludefolders = array();
         
         private $ext = ".crypt";
         private $test = true;
@@ -40,9 +40,9 @@
             $this->folder = isset($settings["folder"]) && is_dir($settings["folder"]) ? $settings["folder"] : ".";
             $this->cipher = isset($settings["cipher"]) && in_array($settings["cipher"], openssl_get_cipher_methods()) ? $settings["cipher"] : "aes-256-cbc";
             $this->onlyfiles = isset($settings["onlyfiles"]) && is_array($settings["onlyfiles"]) ? $settings["onlyfiles"] : array("php", "html", "css", "js");
-            if(isset($settings["avoidpath"]) && is_array($settings["avoidpath"])){
-                foreach($settings["avoidpath"] as $p){
-                    $this->avoidpath[] = realpath($p);
+            if(isset($settings["excludefolders"]) && is_array($settings["excludefolders"])){
+                foreach($settings["excludefolders"] as $p){
+                    $this->excludefolders[] = realpath($p);
                 }
             }
             $this->ext = isset($settings["ext"]) && preg_match('/\.\w{2,}/', $settings["ext"]) ? $settings["ext"] : ".cryp";
@@ -145,7 +145,7 @@
                     $lastfile = $i == count($file) - 1;
                     $pathinfo = pathinfo($file_name);
 
-                    if($isfolder && !in_array(realpath($folder."/".$file_name), $this->avoidpath)){
+                    if($isfolder && !in_array(realpath($folder."/".$file_name), $this->excludefolders)){
                         $tree .= $this->getFilesTree($isfolder, $file_name, $depth, $currentscript, $lastfile);
                         $tree = $this->encrypt($method, $depth+1, $folder."/".$file_name, $tree);
                     }
