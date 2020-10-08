@@ -8,7 +8,7 @@
      *  @version 1.0.0
      *
      */
-    
+
     class Encrypter{
         private $key;
         private $folder;
@@ -95,7 +95,7 @@
 
                 unlink($filename);
             }
-    	}
+        }
         
         /**
          *
@@ -126,14 +126,15 @@
          * @param   String    $method   The encryption method, it can be encrypt or decrypt
          * @param   String    $depth    The current tree depth (used to print the file tree)
          * @param   String    $folder   The folder to be scanned
+         * @param   String    $tree     The string that contains the file tree
          *
          */
-    	public function encrypt($method = "encrypt", $depth = 0, $folder = ""){
+        public function encrypt($method = "encrypt", $depth = 0, $folder = "", $tree = ""){
             $folder = $folder != "" ? $folder : $this->folder;
-    		$file = scandir($folder);
+            $file = scandir($folder);
             
             if($this->echo && $depth == 0){
-                echo "<pre>";
+                $tree .= "<pre>";
             }
             
             for($i = 0; $i < count($file); $i++){
@@ -145,24 +146,24 @@
                     $pathinfo = pathinfo($file_name);
 
                     if($isfolder && !in_array(realpath($folder."/".$file_name), $this->avoidpath)){
-                        $this->printFilesTree($isfolder, $file_name, $depth, $currentscript, $lastfile);
-                        $this->encrypt($method, $depth+1, $folder."/".$file_name);
+                        $tree .= $this->getFilesTree($isfolder, $file_name, $depth, $currentscript, $lastfile);
+                        $tree = $this->encrypt($method, $depth+1, $folder."/".$file_name, $tree);
                     }
                     else if(!$isfolder && (in_array($pathinfo["extension"], $this->onlyfiles) || (count($this->onlyfiles) == 1 && $this->onlyfiles[0] == "*"))){
                         if($this->realpath == realpath($folder."/".$file_name)){
                             $currentscript = true;
-                            $this->printFilesTree($isfolder, $file_name, $depth, $currentscript, $lastfile);
+                            $tree .= $this->getFilesTree($isfolder, $file_name, $depth, $currentscript, $lastfile);
                         }
                         else{
                             if($method == "encrypt" && substr($file_name, -strlen($this->ext)) != $this->ext){
                                 $new_file_name = $file_name.$this->ext;
                                 $this->encryptFile($method, $folder."/".$file_name, $folder."/".$new_file_name);
-                                $this->printFilesTree($isfolder, $file_name, $depth, $currentscript, $lastfile);
+                                $tree .= $this->getFilesTree($isfolder, $file_name, $depth, $currentscript, $lastfile);
                             }
                             else if($method == "decrypt" && substr($file_name, -strlen($this->ext)) == $this->ext){
                                 $new_file_name = str_replace($this->ext, "", $file_name);
                                 $this->encryptFile($method, $folder."/".$file_name, $new_file_name);
-                                $this->printFilesTree($isfolder, $file_name, $depth, $currentscript, $lastfile);
+                                $tree .= $this->getFilesTree($isfolder, $file_name, $depth, $currentscript, $lastfile);
                             }
                         }
                     }
@@ -170,9 +171,12 @@
             }
             
             if($this->echo && $depth == 0){
-                echo "</pre>";
+                $tree .= "</pre>";
+                echo $tree;
             }
-    	}
+            
+            return $tree;
+        }
         
         /**
          *
@@ -185,7 +189,7 @@
          * @param   boolean     $lastfile       Indicates whether the current element is the last file of the folder
          *
          */
-        private function printFilesTree($isfolder, $file_name, $depth, $currentscript, $lastfile){
+        private function getFilesTree($isfolder, $file_name, $depth, $currentscript, $lastfile){
             $branch = "";
             
             if($isfolder){
@@ -195,9 +199,7 @@
                 $branch = ($depth != 0 ? str_repeat("      ", $depth - 1)." ".($lastfile ? "└────" : "├────")." ":"").'<span style="color: '.($currentscript ? 'green' : 'black').';">'.$file_name.'</span><br>';
             }
             
-            if($this->echo){
-                echo $branch;
-            }
+            return $branch;
         }
     }
     

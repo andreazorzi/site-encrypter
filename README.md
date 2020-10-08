@@ -14,7 +14,7 @@ $settings = array(
     "folder" => ".",
     "cipher" => "aes-256-cbc",
     "onlyfiles" => array("php"),
-    "avoidpath" => array("resource/test", "function"),
+    "excludefolders" => array("resource/test", "function"),
     "ext" => array(".crypt")
 );
 ```
