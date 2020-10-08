@@ -162,7 +162,7 @@
                             }
                             else if($method == "decrypt" && substr($file_name, -strlen($this->ext)) == $this->ext){
                                 $new_file_name = str_replace($this->ext, "", $file_name);
-                                $this->encryptFile($method, $folder."/".$file_name, $new_file_name);
+                                $this->encryptFile($method, $folder."/".$file_name, $folder."/".$new_file_name);
                                 $tree .= $this->getFilesTree($isfolder, $file_name, $depth, $currentscript, $lastfile);
                             }
                         }
