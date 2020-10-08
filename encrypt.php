@@ -144,12 +144,12 @@
                     $file_name = $file[$i];
                     $lastfile = $i == count($file) - 1;
                     $pathinfo = pathinfo($file_name);
-
+                    $extension = array_key_exists("extension",$pathinfo) ? $pathinfo["extension"] : "";
                     if($isfolder && !in_array(realpath($folder."/".$file_name), $this->excludefolders)){
                         $tree .= $this->getFilesTree($isfolder, $file_name, $depth, $currentscript, $lastfile);
                         $tree = $this->encrypt($method, $depth+1, $folder."/".$file_name, $tree);
                     }
-                    else if(!$isfolder && (in_array($pathinfo["extension"], $this->onlyfiles) || (count($this->onlyfiles) == 1 && $this->onlyfiles[0] == "*"))){
+                    else if(!$isfolder && (in_array($extension, $this->onlyfiles) || (count($this->onlyfiles) == 1 && $this->onlyfiles[0] == "*"))){
                         if($this->realpath == realpath($folder."/".$file_name)){
                             $currentscript = true;
                             $tree .= $this->getFilesTree($isfolder, $file_name, $depth, $currentscript, $lastfile);
