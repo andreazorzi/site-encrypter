@@ -1,4 +1,5 @@
 <?php
+    error_reporting(0);
 
     /**
      *
@@ -89,11 +90,23 @@
                 $contents = fread($handle, filesize($filename));
 
                 $iv = $this->formatIV($this->key, $this->cipher);
-                $crypttext = $method == "encrypt" ? openssl_encrypt($contents, $this->cipher, $this->key, $options=0, $iv) : openssl_decrypt($contents, $this->cipher, $this->key, $options=0, $iv);
+                $lastsecret = openssl_decrypt($this->getLastSecret(),$this->cipher, $this->key, $options=0, $iv);
 
-                file_put_contents($destination, $crypttext);
-
-                unlink($filename);
+                if($method == "decrypt" && $lastsecret == $this->key ){
+                    $crypttext = openssl_decrypt($contents, $this->cipher, $this->key, $options=0, $iv);
+                    file_put_contents($destination, $crypttext);
+                    unlink($filename);
+                }
+                else if($method == "encrypt"){
+                    $crypttext = openssl_encrypt($contents, $this->cipher, $this->key, $options=0, $iv);
+                    $this->setLastSecret();
+                    file_put_contents($destination, $crypttext);
+                    unlink($filename);
+                }
+                else{
+                    echo("<br><b>WRONG PASSWORD</b><br>");
+                }
+                 
             }
         }
         
@@ -201,6 +214,30 @@
             
             return $branch;
         }
+
+        public function getLastSecret(){
+            try {
+                $secret = json_decode(explode("?>",file_get_contents(__FILE__))[2],true);
+                return $secret["hash"];
+            } catch (\Throwable $th) {
+                //throw $th;
+            }
+        }
+        public function setLastSecret(){
+            try {
+                $contents = file_get_contents(__FILE__);
+                $json = "{\"hash\":\"".$this->getLastSecret()."\"}";
+                $contents = str_replace($json, '', $contents);
+                file_put_contents(__FILE__, $contents);
+            } catch (\Throwable $th) {
+                //throw $th;
+            }
+            $fp = fopen(__FILE__, 'a');
+            $iv = $this->formatIV($this->key, $this->cipher);
+            $hashed = openssl_encrypt($this->key, $this->cipher, $this->key, $options=0, $iv);
+            fwrite($fp, "{\"hash\":\"$hashed\"}");  
+            fclose($fp); 
+        }
     }
     
     $settings = array(
@@ -210,7 +247,7 @@
     );
     
     $encrypter = new Encrypter("top secret", $settings);
-    
+  
     // $encrypter->echo(false);
     // $encrypter->test(false);
     
