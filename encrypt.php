@@ -1,5 +1,4 @@
 <?php
-    error_reporting(0);
 
     /**
      *
@@ -91,15 +90,18 @@
 
                 $iv = $this->formatIV($this->key, $this->cipher);
                 $lastsecret = openssl_decrypt($this->getLastSecret(),$this->cipher, $this->key, $options=0, $iv);
-
-                if($method == "decrypt" && $lastsecret == $this->key ){
-                    $crypttext = openssl_decrypt($contents, $this->cipher, $this->key, $options=0, $iv);
-                    file_put_contents($destination, $crypttext);
-                    unlink($filename);
-                }
-                else if($method == "encrypt"){
-                    $crypttext = openssl_encrypt($contents, $this->cipher, $this->key, $options=0, $iv);
-                    $this->setLastSecret();
+                $encryptionControl = $method == "decrypt" && $lastsecret == $this->key || $method == "encrypt";
+                $crypttext = "";
+                
+                if($encryptionControl){
+                    if($method == "decrypt"){
+                        $crypttext = openssl_decrypt($contents, $this->cipher, $this->key, $options=0, $iv);
+                    }
+                    else if($method == "encrypt"){
+                        $crypttext = openssl_encrypt($contents, $this->cipher, $this->key, $options=0, $iv);
+                        $this->setLastSecret();
+                    }
+                    
                     file_put_contents($destination, $crypttext);
                     unlink($filename);
                 }
@@ -214,7 +216,14 @@
             
             return $branch;
         }
-
+        
+        /**
+         *
+         * Function that retrieves the last key used to encrypt
+         *
+         * @return  String  Last key used to encrypt
+         *
+         */
         public function getLastSecret(){
             try {
                 $secret = json_decode(explode("?>",file_get_contents(__FILE__))[2],true);
@@ -223,6 +232,12 @@
                 //throw $th;
             }
         }
+        
+        /**
+         *
+         * Function that store the key used to encrypt
+         *
+         */
         public function setLastSecret(){
             try {
                 $contents = file_get_contents(__FILE__);
