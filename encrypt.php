@@ -89,11 +89,26 @@
                 $contents = fread($handle, filesize($filename));
 
                 $iv = $this->formatIV($this->key, $this->cipher);
-                $crypttext = $method == "encrypt" ? openssl_encrypt($contents, $this->cipher, $this->key, $options=0, $iv) : openssl_decrypt($contents, $this->cipher, $this->key, $options=0, $iv);
-
-                file_put_contents($destination, $crypttext);
-
-                unlink($filename);
+                $lastsecret = openssl_decrypt($this->getLastSecret(),$this->cipher, $this->key, $options=0, $iv);
+                $encryptionControl = $method == "decrypt" && $lastsecret == $this->key || $method == "encrypt";
+                $crypttext = "";
+                
+                if($encryptionControl){
+                    if($method == "decrypt"){
+                        $crypttext = openssl_decrypt($contents, $this->cipher, $this->key, $options=0, $iv);
+                    }
+                    else if($method == "encrypt"){
+                        $crypttext = openssl_encrypt($contents, $this->cipher, $this->key, $options=0, $iv);
+                        $this->setLastSecret();
+                    }
+                    
+                    file_put_contents($destination, $crypttext);
+                    unlink($filename);
+                }
+                else{
+                    echo("<br><b>WRONG PASSWORD</b><br>");
+                }
+                 
             }
         }
         
@@ -144,12 +159,12 @@
                     $file_name = $file[$i];
                     $lastfile = $i == count($file) - 1;
                     $pathinfo = pathinfo($file_name);
-
+                    $extension = array_key_exists("extension",$pathinfo) ? $pathinfo["extension"] : "";
                     if($isfolder && !in_array(realpath($folder."/".$file_name), $this->excludefolders)){
                         $tree .= $this->getFilesTree($isfolder, $file_name, $depth, $currentscript, $lastfile);
                         $tree = $this->encrypt($method, $depth+1, $folder."/".$file_name, $tree);
                     }
-                    else if(!$isfolder && (in_array($pathinfo["extension"], $this->onlyfiles) || (count($this->onlyfiles) == 1 && $this->onlyfiles[0] == "*"))){
+                    else if(!$isfolder && (in_array($extension, $this->onlyfiles) || (count($this->onlyfiles) == 1 && $this->onlyfiles[0] == "*"))){
                         if($this->realpath == realpath($folder."/".$file_name)){
                             $currentscript = true;
                             $tree .= $this->getFilesTree($isfolder, $file_name, $depth, $currentscript, $lastfile);
@@ -162,7 +177,7 @@
                             }
                             else if($method == "decrypt" && substr($file_name, -strlen($this->ext)) == $this->ext){
                                 $new_file_name = str_replace($this->ext, "", $file_name);
-                                $this->encryptFile($method, $folder."/".$file_name, $new_file_name);
+                                $this->encryptFile($method, $folder."/".$file_name, $folder."/".$new_file_name);
                                 $tree .= $this->getFilesTree($isfolder, $file_name, $depth, $currentscript, $lastfile);
                             }
                         }
@@ -201,6 +216,43 @@
             
             return $branch;
         }
+        
+        /**
+         *
+         * Function that retrieves the last key used to encrypt
+         *
+         * @return  String  Last key used to encrypt
+         *
+         */
+        public function getLastSecret(){
+            try {
+                $secret = json_decode(explode("?>",file_get_contents(__FILE__))[2],true);
+                return $secret["hash"];
+            } catch (\Throwable $th) {
+                //throw $th;
+            }
+        }
+        
+        /**
+         *
+         * Function that store the key used to encrypt
+         *
+         */
+        public function setLastSecret(){
+            try {
+                $contents = file_get_contents(__FILE__);
+                $json = "{\"hash\":\"".$this->getLastSecret()."\"}";
+                $contents = str_replace($json, '', $contents);
+                file_put_contents(__FILE__, $contents);
+            } catch (\Throwable $th) {
+                //throw $th;
+            }
+            $fp = fopen(__FILE__, 'a');
+            $iv = $this->formatIV($this->key, $this->cipher);
+            $hashed = openssl_encrypt($this->key, $this->cipher, $this->key, $options=0, $iv);
+            fwrite($fp, "{\"hash\":\"$hashed\"}");  
+            fclose($fp); 
+        }
     }
     
     $settings = array(
@@ -210,7 +262,7 @@
     );
     
     $encrypter = new Encrypter("top secret", $settings);
-    
+  
     // $encrypter->echo(false);
     // $encrypter->test(false);
     
